@@ -1,0 +1,24 @@
+diff --git a/config/Config-kernel.in b/config/Config-kernel.in
+index ab827d6a71..5141466133 100644
+--- a/config/Config-kernel.in
++++ b/config/Config-kernel.in
+@@ -44,6 +44,7 @@ config KERNEL_DEBUG_FS
+ config KERNEL_MIPS_FP_SUPPORT
+ 	bool
+ 	default y if TARGET_pistachio
++	default y if TARGET_ramips_mt76x8
+ 
+ config KERNEL_ARM_PMU
+ 	bool
+diff --git a/target/Config.in b/target/Config.in
+index a6b3351a61..652d9151b2 100644
+--- a/target/Config.in
++++ b/target/Config.in
+@@ -11,6 +11,7 @@ config HAS_SPE_FPU
+ 	bool
+ 
+ config HAS_FPU
++	default y if TARGET_ramips_mt76x8
+ 	bool
+ 
+ config HAS_DT_OVERLAY_SUPPORT
