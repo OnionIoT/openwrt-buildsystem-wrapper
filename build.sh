@@ -171,7 +171,7 @@ build_model_firmware() {
 	"$OPENWRT_DIR"/scripts/feeds install -a -f
 
 	make -C "$OPENWRT_DIR" defconfig
-	make -C "$OPENWRT_DIR" V=99
+	make -C "$OPENWRT_DIR" -j8
 }
 
 copy_model_firmware() {
