@@ -5,3 +5,5 @@ ALL_KMODS=1
 OPENWRT_TAG=v22.03.3
 GIT_OPENWRT="https://github.com/openwrt/openwrt"
 OEM=onion
+DEV_CLEAN_SKIP=1
+VERBOSE=0
