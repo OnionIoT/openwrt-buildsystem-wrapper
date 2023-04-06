@@ -1,0 +1,50 @@
+# This file is not used: for reference only: pipeline using buildspec from source
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: MIT-0
+version: 0.2
+env:
+  variables:
+    FORCE_UNSAFE_CONFIGURE: 1
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - echo "Installing dependencies"
+      - apt-get update
+      - apt-get -y install --upgrade awscli
+      - sudo apt -y install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
+  pre_build:
+    commands:
+      - mkdir -p $CODEBUILD_SRC_DIR/keys
+      - aws s3 cp s3://onion-build/openwrt/openwrt21.key $CODEBUILD_SRC_DIR/keys/key-build
+      - aws s3 cp s3://onion-build/openwrt/openwrt21.pub $CODEBUILD_SRC_DIR/keys/key-build.pub
+      - cd $CODEBUILD_SRC_DIR
+  build:
+    commands:
+      - bash build.sh
+  post_build:
+    commands:
+      - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then exit 1; fi
+      - RELEASE_VERSION=$(. $CODEBUILD_SRC_DIR/profile; echo ${VERSION#v})
+
+      - echo "Copying Packages"
+
+      - cd "$CODEBUILD_SRC_DIR/openwrt/bin/packages/mipsel_24kc"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/packages/mipsel_24kc/"
+
+      - echo "Copying Binaries"
+
+      - cd "$CODEBUILD_SRC_DIR/openwrt/bin/targets/ramips/mt76x8"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/targets/ramips/mt76x8/"
+cache:
+  paths:
+    - /var/cache/apt/**/*
+    - /var/lib/apt/lists/**/*
+
+artifacts:
+  type: zip
+  files:
+    - "packages/mipsel_24kc/**/*"
+    - "targets/ramips/mt76x8/**/*"
+  base-directory: "openwrt/bin"
