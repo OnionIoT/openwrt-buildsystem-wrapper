@@ -12,7 +12,7 @@ phases:
       - echo "Installing dependencies"
       - apt-get update
       - apt-get -y install --upgrade awscli
-      - sudo apt -y install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
+      - sudo apt -y install git build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
   pre_build:
     commands:
       - mkdir -p $CODEBUILD_SRC_DIR/keys
@@ -25,17 +25,22 @@ phases:
   post_build:
     commands:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then exit 1; fi
+
+      - cd $CODEBUILD_SRC_DIR
       - RELEASE_VERSION=$(. $CODEBUILD_SRC_DIR/profile; echo ${VERSION#v})
+      - export TAG_NAME=`git describe --tags`
 
       - echo "Copying Packages"
 
       - cd "$CODEBUILD_SRC_DIR/openwrt/bin/packages/mipsel_24kc"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/packages/mipsel_24kc/"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$TAG_NAME/packages/mipsel_24kc/"
 
       - echo "Copying Binaries"
-
       - cd "$CODEBUILD_SRC_DIR/openwrt/bin/targets/ramips/mt76x8"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/targets/ramips/mt76x8/"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$TAG_NAME/targets/ramips/mt76x8/"
+
 cache:
   paths:
     - /var/cache/apt/**/*
