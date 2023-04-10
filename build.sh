@@ -3,11 +3,13 @@
 cd `dirname $0`
 
 ROOT_DIR="$PWD"
+PREBUILT="$ROOT_DIR/.prebuilt"
 
 usage_help() {
 	echo "usage: $0
 -m <build model>
 -v <version number>
+-V <verbose>
 -c <version code>
 -p <skip custom patch>
 -o <dist name>
@@ -20,6 +22,25 @@ usage_help() {
 -h <help>"
 
 	exit $1
+}
+
+do_run() {
+	local exit_code=0
+
+	if [ "$VERBOSE" = "1" ]; then
+		$*
+		exit_code=$?
+	else
+		$* > /dev/null
+		exit_code=$?
+	fi
+
+	if [ "$exit_code" = "1" ]; then
+		echo "ERROR: failed to execute $*"
+		exit 1
+	fi
+
+	return 0
 }
 
 apply_patches() {
@@ -109,9 +130,11 @@ prepare_openwrt() {
 
 	if [ -d /dl ]; then
 		ln -s /dl $OPENWRT_DIR/dl
-	elif [ -l /dl ]; then
+	elif [ -L /dl ]; then
 		ln -s $(readlink /dl) $OPENWRT_DIR/dl
 	fi
+
+	[ -d $ROOT_DIR/keys ] && cp -a $ROOT_DIR/keys/key-* $OPENWRT_DIR/
 
 	return 0
 }
@@ -170,8 +193,13 @@ build_model_firmware() {
 	"$OPENWRT_DIR"/scripts/feeds update -a -f
 	"$OPENWRT_DIR"/scripts/feeds install -a -f
 
-	make -C "$OPENWRT_DIR" defconfig
-	make -C "$OPENWRT_DIR" -j8
+	do_run make -C "$OPENWRT_DIR" defconfig
+
+	if [ "$VERBOSE" == "1" ]; then
+		make -C "$OPENWRT_DIR" -j8 V=99
+	else
+		make -C "$OPENWRT_DIR" -j8
+	fi
 }
 
 copy_model_firmware() {
@@ -220,7 +248,7 @@ build_firmware() {
 	copy_model_firmware "$build_model" || exit 1
 }
 
-while getopts m:v:c:o:AKdpCDXh OPT; do
+while getopts m:v:c:o:AKdpCDXVh OPT; do
 	case $OPT in
 		m) MODELS=$OPTARG ;;
 		v) VERSION=$OPTARG ;;
@@ -233,6 +261,7 @@ while getopts m:v:c:o:AKdpCDXh OPT; do
 		o) OEM=$OPTARG ;;
 		A) ALL_PACKAGES=1 ;;
 		K) ALL_KMODS=1 ;;
+		V) VERBOSE=1;;
 		h) usage_help 0 ;;
 		*) usage_help 1 ;;
 	esac
@@ -251,6 +280,7 @@ fi
 [ -z "$ALL_KMODS" ] && ALL_KMODS=0
 [ -z "$OPENWRT_DIR" ] && OPENWRT_DIR="$ROOT_DIR/openwrt"
 [ -z "$OPENWRT_TAG" ] && OPENWRT_TAG="v22.03.3"
+[ -z "$VERBOSE" ] && VERBOSE=0
 OEM_DIR="$ROOT_DIR/$OEM"
 
 # validate OEM dir path
@@ -287,6 +317,17 @@ else
 	MODELS="$supported_models"
 fi
 
+if [ -f "$PREBUILT" ]; then
+	last_hash=$(cat $PREBUILT)
+	current_hash=$(cat $PATCH_DIR/*.patch | md5sum | awk '{print $1}')
+
+	if [ "$last_hash" == "$current_hash" ]; then
+		DEV_PREPARE_SKIP=1
+	else
+		DEV_PREPARE_SKIP=0
+	fi
+fi
+
 trap clean_up INT EXIT TERM
 [ "$CLEAN_UP" == "1" ] && exit 1
 
@@ -295,5 +336,9 @@ prepare_build
 for build_model in $MODELS; do
 	build_firmware "$build_model"
 done
+
+if [ "$DEV_CLEAN_SKIP" == "1" ]; then
+	cat $PATCH_DIR/*.patch | md5sum | awk '{print $1}' > "$PREBUILT"
+fi
 
 exit 0

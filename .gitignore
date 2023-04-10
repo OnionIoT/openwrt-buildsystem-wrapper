@@ -1,2 +1,4 @@
 openwrt
+.prebuilt
+onion/bin
 */pipeline/.terraform
