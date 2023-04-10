@@ -6,6 +6,6 @@ repository = "OnionIoT/openwrt-buildsystem-wrapper"
 
 stage_vars = {
   prod = {
-    branch = "openwrt-22.03"
+    branch = "release"
   }
 }
