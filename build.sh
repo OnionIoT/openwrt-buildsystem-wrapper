@@ -10,6 +10,7 @@ usage_help() {
 -m <build model>
 -v <version number>
 -V <verbose>
+-s <silent output>
 -c <version code>
 -p <skip custom patch>
 -o <dist name>
@@ -27,7 +28,7 @@ usage_help() {
 do_run() {
 	local exit_code=0
 
-	if [ "$VERBOSE" = "1" ]; then
+	if [ "$SILENT" = "0" ]; then
 		$*
 		exit_code=$?
 	else
@@ -196,9 +197,9 @@ build_model_firmware() {
 	do_run make -C "$OPENWRT_DIR" defconfig
 
 	if [ "$VERBOSE" == "1" ]; then
-		make -C "$OPENWRT_DIR" -j8 V=99
+		do_run make -C "$OPENWRT_DIR" -j8 V=99
 	else
-		make -C "$OPENWRT_DIR" -j8
+		do_run make -C "$OPENWRT_DIR" -j8
 	fi
 }
 
@@ -262,6 +263,7 @@ while getopts m:v:c:o:AKdpCDXVh OPT; do
 		A) ALL_PACKAGES=1 ;;
 		K) ALL_KMODS=1 ;;
 		V) VERBOSE=1;;
+		s) SILENT=1;;
 		h) usage_help 0 ;;
 		*) usage_help 1 ;;
 	esac
@@ -281,6 +283,7 @@ fi
 [ -z "$OPENWRT_DIR" ] && OPENWRT_DIR="$ROOT_DIR/openwrt"
 [ -z "$OPENWRT_TAG" ] && OPENWRT_TAG="v22.03.3"
 [ -z "$VERBOSE" ] && VERBOSE=0
+[ -z "$SILENT" ] && SILENT=0
 OEM_DIR="$ROOT_DIR/$OEM"
 
 # validate OEM dir path
