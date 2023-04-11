@@ -9,9 +9,5 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Create release commit
-        run: git -c user.name='Github Action' -c user.email='action@github.com' commit -m "${{ github.event.release.tag_name }}" --allow-empty 
-      - name: Add Tag
-        run: git tag "${{ github.event.release.tag_name }}"
       - name: push to release branch
         run: git push -f origin "HEAD:refs/heads/release"
