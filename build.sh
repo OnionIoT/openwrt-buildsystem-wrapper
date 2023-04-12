@@ -249,7 +249,7 @@ build_firmware() {
 	copy_model_firmware "$build_model" || exit 1
 }
 
-while getopts m:v:c:o:AKdpCDXVh OPT; do
+while getopts m:v:c:o:AKdpCDXVsh OPT; do
 	case $OPT in
 		m) MODELS=$OPTARG ;;
 		v) VERSION=$OPTARG ;;
