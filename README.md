@@ -38,6 +38,8 @@ It's a main script that does all the jobs to clone and prepare openwrt, apply pa
 usage: ./build.sh
 -m <build model>
 -v <version number>
+-V <verbose>
+-s <silent output>
 -c <version code>
 -p <skip custom patch>
 -o <dist name>
@@ -47,6 +49,7 @@ usage: ./build.sh
 -C <only cleanup build env>
 -A <build all packages>
 -K <build all kernel modules>
+-
 -h <help>
 ```
 
@@ -59,6 +62,8 @@ VCODE="b1"           # Same as -c
 MODELS="onion"       # Same as -m
 ALL_KMODS=1          # Same as -K
 OEM=onion            # Same as -o
+VERBOSE=1            # Same as -V
+SILENT=1             # Same as -s
 OPENWRT_TAG=v22.03.3 # It would check out and use the openwrt tag before the build
 GIT_OPENWRT="https://github.com/openwrt/openwrt" # It would use this URL to clone openwrt
 ```
