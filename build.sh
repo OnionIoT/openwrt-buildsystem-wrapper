@@ -249,6 +249,10 @@ build_firmware() {
 	copy_model_firmware "$build_model" || exit 1
 }
 
+if [ -f "$ROOT_DIR/profile"  ]; then
+	. $ROOT_DIR/profile
+fi
+
 while getopts m:v:c:o:AKdpCDXVsh OPT; do
 	case $OPT in
 		m) MODELS=$OPTARG ;;
@@ -268,10 +272,6 @@ while getopts m:v:c:o:AKdpCDXVsh OPT; do
 		*) usage_help 1 ;;
 	esac
 done
-
-if [ -f "$ROOT_DIR/profile"  ]; then
-	. $ROOT_DIR/profile
-fi
 
 [ -z "$APPLY_PATCH" ] && APPLY_PATCH=1
 [ -z "$DEV_PREPARE" ] && DEV_PREPARE=0
