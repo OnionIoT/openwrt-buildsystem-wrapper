@@ -5,6 +5,8 @@ version: 0.2
 env:
   variables:
     FORCE_UNSAFE_CONFIGURE: 1
+    # Included as PATCH: since AEG_MAX cannot be overrideen in Code build env and Codestart path is too long
+    ROOT_PATH: "/openwrt"
 phases:
   install:
     runtime-versions:
@@ -16,31 +18,34 @@ phases:
       - sudo apt -y install git build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
   pre_build:
     commands:
-      - mkdir -p $CODEBUILD_SRC_DIR/keys
-      - aws s3 cp s3://onion-build/openwrt/openwrt21.key $CODEBUILD_SRC_DIR/keys/key-build
-      - aws s3 cp s3://onion-build/openwrt/openwrt21.pub $CODEBUILD_SRC_DIR/keys/key-build.pub
-      - cd $CODEBUILD_SRC_DIR
+      - mkdir -p $ROOT_PATH
+      - cp -r $CODEBUILD_SRC_DIR/. $ROOT_PATH
+      - mkdir -p $ROOT_PATH/keys
+      - aws s3 cp s3://onion-build/openwrt/openwrt21.key $ROOT_PATH/keys/key-build
+      - aws s3 cp s3://onion-build/openwrt/openwrt21.pub $ROOT_PATH/keys/key-build.pub
+
   build:
     commands:
+      - cd $ROOT_PATH
       - bash build.sh
   post_build:
     commands:
-      - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then exit 1; fi
+      - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then echo ">>> VERBOSE DEBUG BUILD"; bash build.sh -V ; exit 1; fi
 
-      - cd $CODEBUILD_SRC_DIR
-      - RELEASE_VERSION=$(. $CODEBUILD_SRC_DIR/profile; echo ${VERSION#v})
+      - cd $ROOT_PATH
+      - RELEASE_VERSION=$(. $ROOT_PATH/profile; echo ${VERSION#v})
       - export TAG_NAME=`git describe --tags`
 
       - echo "Copying Packages"
 
-      - cd "$CODEBUILD_SRC_DIR/openwrt/bin/packages/mipsel_24kc"
+      - cd "$ROOT_PATH/openwrt/bin/packages/mipsel_24kc"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/packages/mipsel_24kc/"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$TAG_NAME/packages/mipsel_24kc/"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$TAG_NAME/packages/mipsel_24kc/"
 
       - echo "Copying Binaries"
-      - cd "$CODEBUILD_SRC_DIR/openwrt/bin/targets/ramips/mt76x8"
+      - cd "$ROOT_PATH/openwrt/bin/targets/ramips/mt76x8"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/targets/ramips/mt76x8/"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$TAG_NAME/targets/ramips/mt76x8/"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$TAG_NAME/targets/ramips/mt76x8/"
 
 cache:
   paths:
@@ -52,4 +57,4 @@ artifacts:
   files:
     - "packages/mipsel_24kc/**/*"
     - "targets/ramips/mt76x8/**/*"
-  base-directory: "openwrt/bin"
+  base-directory: "$ROOT_PATH/openwrt/bin"

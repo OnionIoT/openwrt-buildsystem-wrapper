@@ -26,4 +26,5 @@ module "build_action" {
   compute_type               = "BUILD_GENERAL1_LARGE"
   buildspec_file             = "buildspec.yml"
   cache_bucket               = aws_s3_bucket.codepipeline_bucket.bucket
+  is_privileged_mode         = true
 }
