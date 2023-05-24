@@ -1,0 +1,42 @@
+--- a/feeds/packages/lang/node/Makefile
++++ b/feeds/packages/lang/node/Makefile
+@@ -38,7 +38,7 @@ define Package/node
+   SUBMENU:=Node.js
+   TITLE:=Node.js is a platform built on Chrome's JavaScript runtime
+   URL:=https://nodejs.org/
+-  DEPENDS:=@HAS_FPU @(i386||x86_64||arm||aarch64||mipsel) \
++  DEPENDS:=@KERNEL_MIPS_FP_SUPPORT @(i386||x86_64||arm||aarch64||mipsel) \
+ 	   +libstdcpp +libopenssl +zlib +libnghttp2 +libuv \
+ 	   +libcares +libatomic +NODEJS_ICU_SYSTEM:icu +NODEJS_ICU_SYSTEM:icu-full-data
+ endef
+@@ -118,6 +118,7 @@ CONFIGURE_ARGS:= \
+ 	--shared-libuv \
+ 	--shared-cares \
+ 	--with-intl=$(if $(CONFIG_NODEJS_ICU_SMALL),small-icu,$(if $(CONFIG_NODEJS_ICU_SYSTEM),system-icu,none)) \
++	$(if $(findstring mt76x8,$(CONFIG_TARGET_SUBTARGET)),--with-mips-float-abi=soft) \
+ 	$(if $(findstring +neon,$(CONFIG_CPU_TYPE)),--with-arm-fpu=neon) \
+ 	$(if $(findstring +vfp",$(CONFIG_CPU_TYPE)),--with-arm-fpu=vfp) \
+ 	$(if $(findstring +vfpv3",$(CONFIG_CPU_TYPE)),--with-arm-fpu=vfpv3-d16) \
+--- /dev/null
++++ b/feeds/packages/lang/node/patches/011-disable__detect_fp64_mode.patch
+@@ -0,0 +1,20 @@
++--- a/deps/v8/src/base/cpu.cc
+++++ b/deps/v8/src/base/cpu.cc
++@@ -197,6 +197,7 @@ static uint32_t ReadELFHWCaps() {
++ int __detect_fp64_mode(void) {
++   double result = 0;
++   // Bit representation of (double)1 is 0x3FF0000000000000.
+++  /*
++   __asm__ volatile(
++       ".set push\n\t"
++       ".set noreorder\n\t"
++@@ -211,6 +212,9 @@ int __detect_fp64_mode(void) {
++       : "t0", "$f0", "$f1", "memory");
++ 
++   return !(result == 1);
+++  */
+++
+++  return result;
++ }
++ 
++ 
