@@ -1,0 +1,22 @@
+--- a/target/linux/ramips/dts/mt7628an.dtsi
++++ b/target/linux/ramips/dts/mt7628an.dtsi
+@@ -221,9 +221,6 @@
+ 			resets = <&rstctrl 31>;
+ 			reset-names = "pwm";
+ 
+-			pinctrl-names = "default";
+-			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
+-
+ 			status = "disabled";
+ 		};
+ 
+--- a/target/linux/ramips/dts/mt7628an_onion_omega2.dtsi
++++ b/target/linux/ramips/dts/mt7628an_onion_omega2.dtsi
+@@ -176,3 +176,7 @@
+ 		reg = <0x28 0x6>;
+ 	};
+ };
++
++&pwm {
++	status = "okay";
++};
