@@ -54,7 +54,7 @@ apply_patches() {
 
 	cd "$OPENWRT_DIR"
 
-	for file in $(find $PATCH_DIR -type f -name '*.patch'); do
+	for file in $(ls -1 $PATCH_DIR/*.patch); do
 		echo "Applying patch: $file"
 		if patch -p1 -f --dry-run < $file; then
 			patch -p1 -f < $file || return 1
