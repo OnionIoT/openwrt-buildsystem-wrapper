@@ -116,14 +116,18 @@ clean_up() {
 	update_oem_feed del
 }
 
-prepare_openwrt() {
+openwrt_version_mismatch() {
 	[ -z $GIT_OPENWRT ] && GIT_OPENWRT="https://github.com/openwrt/openwrt"
-
 	[ ! -d "$OPENWRT_DIR/.git" ] && git clone "$GIT_OPENWRT" "$OPENWRT_DIR"
 	[ ! -d "$OPENWRT_DIR" ] && return 1
 
 	C_TAG=$(git -C "$OPENWRT_DIR" describe --tags)
-	if [ "$C_TAG" != "$OPENWRT_TAG" ]; then
+
+	[[ "$C_TAG" != "$OPENWRT_TAG" ]]
+}
+
+prepare_openwrt() {
+	if openwrt_version_mismatch; then
 		git -C "$OPENWRT_DIR" reset HEAD --hard
 		git -C "$OPENWRT_DIR" fetch --all
 		git -C "$OPENWRT_DIR" checkout "$OPENWRT_TAG"
@@ -324,10 +328,10 @@ if [ -f "$PREBUILT" ]; then
 	last_hash=$(cat $PREBUILT)
 	current_hash=$(cat $PATCH_DIR/*.patch | md5sum | awk '{print $1}')
 
-	if [ "$last_hash" == "$current_hash" ]; then
-		DEV_PREPARE_SKIP=1
-	else
+	if [ "$last_hash" != "$current_hash" ] || openwrt_version_mismatch; then
 		DEV_PREPARE_SKIP=0
+	else
+		DEV_PREPARE_SKIP=1
 	fi
 fi
 

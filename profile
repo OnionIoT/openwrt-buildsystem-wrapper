@@ -1,8 +1,8 @@
-VERSION="22.03.3"
+VERSION="22.03.5"
 VCODE="b102"
 MODELS="onion"
 ALL_KMODS=1
-OPENWRT_TAG=v22.03.3
+OPENWRT_TAG=v22.03.5
 GIT_OPENWRT="https://github.com/openwrt/openwrt"
 OEM=onion
 DEV_CLEAN_SKIP=1
