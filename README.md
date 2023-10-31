@@ -66,6 +66,8 @@ VERBOSE=1            # Same as -V
 SILENT=1             # Same as -s
 OPENWRT_TAG=v22.03.3 # It would check out and use the openwrt tag before the build
 GIT_OPENWRT="https://github.com/openwrt/openwrt" # It would use this URL to clone openwrt
+INCLUDE_PACKAGES_M=""  # add packages in build config to be compiled as module package i.e i2c-tools libi2c
+INCLUDE_PACKAGES_Y=""  # add packages in build config to be compiled as built-in package i.e i2c-tools libi2c
 ```
 
 ## All files specific to custom dist are placed under dir `onion`

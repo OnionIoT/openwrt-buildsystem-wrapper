@@ -198,6 +198,14 @@ build_model_firmware() {
 	"$OPENWRT_DIR"/scripts/feeds update -a -f
 	"$OPENWRT_DIR"/scripts/feeds install -a -f
 
+	for pkg in $INCLUDE_PACKAGES_M; do
+		echo "CONFIG_PACKAGE_${pkg}=m" >> $OPENWRT_DIR/.config
+	done
+
+	for pkg in $INCLUDE_PACKAGES_Y; do
+		echo "CONFIG_PACKAGE_${pkg}=y" >> $OPENWRT_DIR/.config
+	done
+
 	do_run make -C "$OPENWRT_DIR" defconfig
 
 	if [ "$VERBOSE" == "1" ]; then
