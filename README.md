@@ -1,9 +1,17 @@
 
 # OpenWrt Firmware Build Wrapper
-- Easily build OpenWrt firmware without cloning the upstream repo, instead maintain patches and build script which would be applied and clean up when the build starts and stops.
+Easily build OpenWrt firmware without forking the upstream repo, instead maintain patches and build script which would be applied and clean up when the build starts and stops.
+
+## System Requirements
+
+We recommend using **Ubuntu 22.04** Linux to build this repo with:
+* At least 8GB RAM
+* A modern, powerful CPU - the more cores on the processor, the faster the build system compilation
+
+See the [OpenWRT Build System Setup instructions](https://openwrt.org/docs/guide-developer/toolchain/install-buildsystem#debianubuntu) for details on what packages are required.
 
 # Directory Structure
-- This build system wrapper expects directories and files to be maintained in specific structure
+This build system wrapper expects directories and files to be maintained in specific structure
 
 ## `build.sh`
 It's a main script that does all the jobs to clone and prepare openwrt, apply patches, trigger the build, and then clean up everything.
