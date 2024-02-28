@@ -5,7 +5,7 @@ provider "aws" {
 terraform {
   required_version = ">= 1"
   backend "s3" {
-    bucket               = "devops-openwrt-terraform-state"
+    bucket               = "devops-openwrt-terraform-state-ezops-test"
     key                  = "buildsystem_wrapper_state"
     region               = "us-east-1"
     dynamodb_table       = "devops-openwrt-terraform-lock"
