@@ -8,7 +8,7 @@ terraform {
     bucket               = "devops-openwrt-terraform-state-ezops-test"
     key                  = "buildsystem_wrapper_state"
     region               = "us-east-1"
-    dynamodb_table       = "devops-openwrt-terraform-lock"
+    dynamodb_table       = "devops-openwrt-terraform-lock-ezops-test"
     workspace_key_prefix = "buildsystem_wrapper_state"
   }
   required_providers {
