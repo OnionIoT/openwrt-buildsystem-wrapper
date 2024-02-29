@@ -20,9 +20,5 @@ variable "repository" {
 
 variable "stage_vars" {
   description = "Stage Specific Variables"
-  type = map(
-    object({
-      branch = string
-    })
-  )
+  type        = map(object({ branch = string }))
 }
