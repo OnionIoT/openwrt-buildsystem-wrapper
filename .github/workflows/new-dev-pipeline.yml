@@ -8,6 +8,7 @@ on:
 
 env:
   BRANCH_PATTERN: openwrt-2[0-9]\.[0-9]{2}
+  TERRAFORM_VERSION: 1.7.4
 
 jobs:
   branch_created:
@@ -30,23 +31,52 @@ jobs:
             echo "VALID_BRANCH=true" >> $GITHUB_ENV
           fi
 
-      # - name: Terraform Workspace Select
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: terraform workspace select <workspace_name>
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: $TERRAFORM_VERSION
+          
+      - name: Terraform Init
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform init
 
-      # - name: Terraform Plan
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: terraform plan -out=tfplan
+      - name: Terraform Format
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform fmt -check
+
+      - name: Terraform Validate
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform validate -no-color
+        
+      - name: Terraform Workspace 
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform workspace new $BRANCH_NAME
+
+      - name: Terraform Workspace Select
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform workspace select $BRANCH_NAME
+
+      - name: Terraform Plan
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform plan -out=tfplan -var="stage_vars={${BRANCH_NAME}={branch=\"${BRANCH_NAME}\"}"
 
       # - name: Terraform Apply
       #   if: env.VALID_BRANCH == 'true'
-      #   run: terraform apply tfplan
-
-      - name: Display branch name AND APPLY TERRAFORM
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          echo "Branch name created $GITHUB_REF"
-          echo "PROVISIONING TF..."
+      #   run: |
+      #     cd .terraform/pipeline
+      #     terraform apply tfplan
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'
