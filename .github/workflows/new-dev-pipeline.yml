@@ -1,0 +1,53 @@
+# This pipeline create a new pipeline in AWS CodePipeline if the branch follows the desired pattern defined in BRANCH_PATTERN.
+name: New branch created
+
+on:
+  create:
+    branches:
+      - 'openwrt-2*'
+
+env:
+  BRANCH_PATTERN: openwrt-2[0-9]\.[0-9]{2}
+
+jobs:
+  branch_created:
+    name: Branch Created
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      
+      - name: Get branch name
+        run: echo "BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+      
+      - name: Verify branch name
+        run: |
+          if [[ ! "${BRANCH_NAME}" =~ $BRANCH_PATTERN ]]; then
+            echo "Branch name doesn't match the pattern."
+            echo "VALID_BRANCH=false" >> $GITHUB_ENV
+          else
+            echo "New branch created $GITHUB_REF"
+            echo "VALID_BRANCH=true" >> $GITHUB_ENV
+          fi
+
+      # - name: Terraform Workspace Select
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: terraform workspace select <workspace_name>
+
+      # - name: Terraform Plan
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: terraform plan -out=tfplan
+
+      # - name: Terraform Apply
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: terraform apply tfplan
+
+      - name: Display branch name AND APPLY TERRAFORM
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          echo "Branch name created $GITHUB_REF"
+          echo "PROVISIONING TF..."
+
+      - name: NOTHING TO DO
+        if: env.VALID_BRANCH == 'false'
+        run: echo "THIS BRANCH DOES NOT CREATE A NEW AWS CODEPIPELINE"
