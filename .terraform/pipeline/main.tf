@@ -25,12 +25,12 @@ locals {
 }
 
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = "devops-${var.project_name}-artifacts-${local.stage}"
+  bucket = "devops-${var.project_name}-artifacts-devops-${local.stage}"
   tags   = local.tags
 }
 
 resource "aws_codepipeline" "codepipeline" {
-  name     = "${var.project_name}-pipeline-${local.stage}"
+  name     = "${var.project_name}-pipeline-devops-${local.stage}"
   role_arn = aws_iam_role.codepipeline_role.arn
   tags     = local.tags
 

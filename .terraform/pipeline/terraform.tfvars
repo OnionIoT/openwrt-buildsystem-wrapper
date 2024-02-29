@@ -8,9 +8,6 @@ stage_vars = {
   prod = {
     branch = "release"
   }
-  dev = {
-    branch = "devops"
-  }
   devops = {
     branch = "devops"
   }
