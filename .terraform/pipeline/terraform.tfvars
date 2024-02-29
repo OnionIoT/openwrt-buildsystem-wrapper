@@ -1,4 +1,4 @@
-project_name      = "openwrt-buildsystem"
+project_name      = "openwrt-buildsystem-devops"
 region            = "us-east-1"
 deployment_bucket = "devops-openwrt-terraform-state-ezops-test-downloads"
 
@@ -8,10 +8,10 @@ stage_vars = {
   prod = {
     branch = "release"
   }
-  devops = {
-    branch = "devops-28.03"
-  }
   dev = {
-    branch = "devops-28.03"
+    branch = "devops"
+  }
+  devops = {
+    branch = "devops"
   }
 }
