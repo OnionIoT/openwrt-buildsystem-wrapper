@@ -18,6 +18,7 @@ locals {
     stage         = local.stage
     REGION        = var.region
     OUTPUT_BUCKET = var.deployment_bucket
+    RELEASE_VERSION = split("-", local.stage)[1]
   }
 
   codebuild_shared_secrets = {

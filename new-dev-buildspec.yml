@@ -31,12 +31,9 @@ phases:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then echo ">>> VERBOSE DEBUG BUILD"; bash build.sh -V ; exit 1; fi
 
       - cd $ROOT_PATH
-      - RELEASE_VERSION=$(. $ROOT_PATH/profile; echo ${VERSION#v})
-      - export TAG_NAME=`git describe --tags`
+      - BUILD_DATE=$(date +\%Y\%m\%d)
 
       - echo "Copying Packages"
-
-      - BUILD_DATE = $(date +\%Y\%m\%d)
 
       - cd "$ROOT_PATH/openwrt/bin/packages/mipsel_24kc"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/packages/mipsel_24kc/"
