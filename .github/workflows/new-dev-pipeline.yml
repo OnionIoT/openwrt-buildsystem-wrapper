@@ -17,7 +17,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      
+        with:
+          ref: devops
+              
       - name: Get branch name
         run: echo "BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
       
@@ -31,50 +33,57 @@ jobs:
             echo "VALID_BRANCH=true" >> $GITHUB_ENV
           fi
 
-      - name: Set up Terraform
+      - name: Test current branch
         if: env.VALID_BRANCH == 'true'
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: $TERRAFORM_VERSION
+        run: | 
+          cd .terraform/pipeline
+          cat main.tf
+          echo "Branch name for new dev pipeline" 
+
+      # - name: Set up Terraform
+      #   if: env.VALID_BRANCH == 'true'
+      #   uses: hashicorp/setup-terraform@v3
+      #   with:
+      #     terraform_version: $TERRAFORM_VERSION
           
-      - name: Terraform Init
-        if: env.VALID_BRANCH == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          cd ~/.terraform/pipeline
-          terraform init
+      # - name: Terraform Init
+      #   if: env.VALID_BRANCH == 'true'
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform init
 
-      - name: Terraform Format
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd ~/.terraform/pipeline
-          terraform fmt -check
+      # - name: Terraform Format
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform fmt -check
 
-      - name: Terraform Validate
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd ~/.terraform/pipeline
-          terraform validate -no-color
+      # - name: Terraform Validate
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform validate -no-color
         
-      - name: Terraform New Workspace 
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd ~/.terraform/pipeline
-          terraform workspace new $BRANCH_NAME
+      # - name: Terraform New Workspace 
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform workspace new $BRANCH_NAME
 
-      - name: Terraform Workspace Select
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd ~/.terraform/pipeline
-          terraform workspace select $BRANCH_NAME
+      # - name: Terraform Workspace Select
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform workspace select $BRANCH_NAME
 
-      - name: Terraform Plan
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd ~/.terraform/pipeline
-          terraform plan -out=tfplan -var="stage_vars={${BRANCH_NAME}={branch=\"${BRANCH_NAME}\"}"
+      # - name: Terraform Plan
+      #   if: env.VALID_BRANCH == 'true'
+      #   run: |
+      #     cd ~/.terraform/pipeline
+      #     terraform plan -out=tfplan -var="stage_vars={${BRANCH_NAME}={branch=\"${BRANCH_NAME}\"}"
 
       # - name: Terraform Apply
       #   if: env.VALID_BRANCH == 'true'
