@@ -25,7 +25,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = "devops-${var.project_name}-artifacts-devops-${local.stage}"
+  bucket = "devops-${var.project_name}-artifacts-${local.stage}"
   tags   = local.tags
 }
 
