@@ -71,7 +71,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           cd .terraform/pipeline
-          sed -i '/stage_vars = {/a \ \ "${BRANCH_NAME}" = {\n \ \ \ branch = "${BRANCH_NAME}"\n \ \ }' terraform.tfvars
+          sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
           terraform plan -out=tfplan"
 
       # - name: Terraform Apply
