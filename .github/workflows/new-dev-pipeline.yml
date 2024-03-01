@@ -74,14 +74,14 @@ jobs:
           sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
           terraform plan -out=tfplan
 
-      # - name: Terraform Apply
-      #   if: env.VALID_BRANCH == 'true'
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #   run: |
-      #     cd .terraform/pipeline
-      #     terraform apply tfplan
+      - name: Terraform Apply
+        if: env.VALID_BRANCH == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd .terraform/pipeline
+          terraform apply tfplan
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'
