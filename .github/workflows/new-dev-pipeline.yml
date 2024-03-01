@@ -81,7 +81,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           cd .terraform/pipeline
-          terraform apply tfplan
+          terraform apply tfplan -auto-approve
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'
