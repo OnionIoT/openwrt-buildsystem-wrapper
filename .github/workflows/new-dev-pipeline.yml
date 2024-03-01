@@ -33,62 +33,54 @@ jobs:
             echo "VALID_BRANCH=true" >> $GITHUB_ENV
           fi
 
-      - name: Test current branch
+      - name: Set up Terraform
         if: env.VALID_BRANCH == 'true'
-        run: | 
-          cd .terraform/pipeline
-          cat main.tf
-          echo "Branch name for new dev pipeline" 
-
-      # - name: Set up Terraform
-      #   if: env.VALID_BRANCH == 'true'
-      #   uses: hashicorp/setup-terraform@v3
-      #   with:
-      #     terraform_version: $TERRAFORM_VERSION
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: $TERRAFORM_VERSION
           
-      # - name: Terraform Init
+      - name: Terraform Init
+        if: env.VALID_BRANCH == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd .terraform/pipeline
+          terraform init
+
+      - name: Terraform Validate
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform validate
+        
+      - name: Terraform New Workspace 
+        if: env.VALID_BRANCH == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd .terraform/pipeline
+          terraform workspace new $BRANCH_NAME
+          echo "Current Workspace is $(terraform workspace show)"
+
+      - name: Terraform Plan
+        if: env.VALID_BRANCH == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          cd .terraform/pipeline
+          sed -i '/stage_vars = {/a \ \ \"$BRANCH_NAME\" = {\n \ \ \ branch = \"$BRANCH_NAME\"\n \ \ }' terraform.tfvars
+          terraform plan -out=tfplan"
+
+      # - name: Terraform Apply
       #   if: env.VALID_BRANCH == 'true'
       #   env:
       #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform init
-
-      # - name: Terraform Format
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform fmt -check
-
-      # - name: Terraform Validate
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform validate -no-color
-        
-      # - name: Terraform New Workspace 
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform workspace new $BRANCH_NAME
-
-      # - name: Terraform Workspace Select
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform workspace select $BRANCH_NAME
-
-      # - name: Terraform Plan
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
-      #     terraform plan -out=tfplan -var="stage_vars={${BRANCH_NAME}={branch=\"${BRANCH_NAME}\"}"
-
-      # - name: Terraform Apply
-      #   if: env.VALID_BRANCH == 'true'
-      #   run: |
-      #     cd ~/.terraform/pipeline
+      #     cd .terraform/pipeline
       #     terraform apply tfplan
 
       - name: NOTHING TO DO
