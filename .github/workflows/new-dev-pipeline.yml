@@ -72,7 +72,7 @@ jobs:
         run: |
           cd .terraform/pipeline
           sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
-          terraform plan -out=tfplan"
+          terraform plan -out=tfplan
 
       # - name: Terraform Apply
       #   if: env.VALID_BRANCH == 'true'
