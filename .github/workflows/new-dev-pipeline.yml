@@ -48,12 +48,6 @@ jobs:
           cd .terraform/pipeline
           terraform init
 
-      - name: Terraform Validate
-        if: env.VALID_BRANCH == 'true'
-        run: |
-          cd .terraform/pipeline
-          terraform validate
-        
       - name: Terraform New Workspace 
         if: env.VALID_BRANCH == 'true'
         env:
@@ -63,6 +57,13 @@ jobs:
           cd .terraform/pipeline
           terraform workspace new $BRANCH_NAME
           echo "Current Workspace is $(terraform workspace show)"
+
+      - name: Terraform Validate
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform validate
+        
 
       - name: Terraform Plan
         if: env.VALID_BRANCH == 'true'
