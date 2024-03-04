@@ -1,14 +1,11 @@
 project_name      = "openwrt-buildsystem-devops"
 region            = "us-east-1"
-deployment_bucket = "devops-openwrt-terraform-state-ezops-test-downloads"
+deployment_bucket = "downloads.onioniot.com"
 
 repository = "OnionIoT/openwrt-buildsystem-wrapper"
 
 stage_vars = {
   prod = {
     branch = "release"
-  }
-  devops = {
-    branch = "devops"
   }
 }

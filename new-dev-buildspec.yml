@@ -31,10 +31,9 @@ phases:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then echo ">>> VERBOSE DEBUG BUILD"; bash build.sh -V ; exit 1; fi
 
       - cd $ROOT_PATH
-      - BUILD_DATE=$(date +\%Y\%m\%d)
+      - BUILD_DATE=$(date +%Y%m%d%H%M%S)
 
       - echo "Copying Packages"
-
       - cd "$ROOT_PATH/openwrt/bin/packages/mipsel_24kc"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/packages/mipsel_24kc/"
 
