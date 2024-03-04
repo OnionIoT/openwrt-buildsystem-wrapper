@@ -38,12 +38,10 @@ phases:
 
       - cd "$ROOT_PATH/openwrt/bin/packages/mipsel_24kc"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/packages/mipsel_24kc/"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$TAG_NAME/packages/mipsel_24kc/"
 
       - echo "Copying Binaries"
       - cd "$ROOT_PATH/openwrt/bin/targets/ramips/mt76x8"
       - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/releases/$RELEASE_VERSION/targets/ramips/mt76x8/"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$TAG_NAME/targets/ramips/mt76x8/"
 
 cache:
   paths:
