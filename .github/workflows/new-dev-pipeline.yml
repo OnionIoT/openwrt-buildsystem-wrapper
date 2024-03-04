@@ -5,6 +5,9 @@ on:
   create:
     branches:
       - 'openwrt-2*'
+  delete:
+    branches:
+      - 'openwrt-2*'
 
 env:
   BRANCH_PATTERN: openwrt-2[0-9]\.[0-9]{2}
@@ -21,7 +24,12 @@ jobs:
           ref: devops
               
       - name: Get branch name
-        run: echo "BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+        run: | 
+          if [ "${{ github.event_name }}" == 'delete' ]; then
+            echo "BRANCH_NAME=${{ github.event.ref }}" >> $GITHUB_ENV
+          else
+            echo "BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+          fi
       
       - name: Verify branch name
         run: |
@@ -63,7 +71,6 @@ jobs:
         run: |
           cd .terraform/pipeline
           terraform validate
-        
 
       - name: Terraform Plan
         if: env.VALID_BRANCH == 'true'
@@ -83,6 +90,15 @@ jobs:
         run: |
           cd .terraform/pipeline
           terraform apply -auto-approve
+      
+      - name: Terraform Destroy
+        if: env.VALID_BRANCH == 'true' && github.event_name == 'delete'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          #cd .terraform/pipeline
+          #terraform destroy -auto-approve
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'
