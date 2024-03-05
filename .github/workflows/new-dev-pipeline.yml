@@ -1,5 +1,5 @@
 # This pipeline create a new pipeline in AWS CodePipeline if the branch follows the desired pattern defined in BRANCH_PATTERN.
-name: "${{ github.event_name }} AWS CodePipeline" 
+name: "New Branch create AWS CodePipeline" 
 
 on:
   create:
@@ -14,7 +14,6 @@ env:
 
 jobs:
   branch_created:
-    name: "${{ github.event_name }} AWS CodePipeline" 
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
