@@ -5,17 +5,16 @@ on:
   create:
     branches:
       - 'openwrt-2*'
-  delete:
-    branches:
-      - 'openwrt-2*'
 
 env:
   BRANCH_PATTERN: openwrt-2[0-9]\.[0-9]{2}
   TERRAFORM_VERSION: 1.7.4
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 jobs:
   branch_created:
-    name: Branch Created
+    name: "${{ github.event_name }} AWS CodePipeline" 
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -25,11 +24,7 @@ jobs:
               
       - name: Get branch name
         run: | 
-          if [ "${{ github.event_name }}" == 'delete' ]; then
             echo "BRANCH_NAME=${{ github.event.ref }}" >> $GITHUB_ENV
-          else
-            echo "BRANCH_NAME=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
-          fi
       
       - name: Verify branch name
         run: |
@@ -47,20 +42,14 @@ jobs:
         with:
           terraform_version: $TERRAFORM_VERSION
           
-      - name: Terraform Init
+      - name: Terraform Init 
         if: env.VALID_BRANCH == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           cd .terraform/pipeline
           terraform init
 
-      - name: Terraform New Workspace 
+      - name: Terraform New Workspace
         if: env.VALID_BRANCH == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           cd .terraform/pipeline
           terraform workspace new $BRANCH_NAME
@@ -74,31 +63,16 @@ jobs:
 
       - name: Terraform Plan
         if: env.VALID_BRANCH == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           cd .terraform/pipeline
           sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
           terraform plan
 
       - name: Terraform Apply
-        if: env.VALID_BRANCH == 'true' && github.event_name == 'create'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
           terraform apply -auto-approve
-      
-      - name: Terraform Destroy
-        if: env.VALID_BRANCH == 'true' && github.event_name == 'delete'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          #cd .terraform/pipeline
-          #terraform destroy -auto-approve
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'
