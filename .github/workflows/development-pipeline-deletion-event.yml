@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: devops
               
       - name: Get branch name
         run: | 
@@ -71,7 +69,7 @@ jobs:
         run: |
           cd .terraform/pipeline
           sed -i '/^resource "aws_s3_bucket" "codepipeline_bucket" {/a force_destroy = true' main.tf
-          terraform apply -auto-approve
+          terraform apply -auto-approve -var="buildspec_file_name=development-buildspec.yml"
       
       - name: Terraform Destroy && env.TF_IS_EMPTY == 'false'
         if: env.VALID_BRANCH == 'true'
