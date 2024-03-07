@@ -68,6 +68,7 @@ jobs:
         if: env.VALID_BRANCH == 'true' && env.TF_IS_EMPTY == 'false'
         run: |
           cd .terraform/pipeline
+          sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
           sed -i '/^resource "aws_s3_bucket" "codepipeline_bucket" {/a force_destroy = true' main.tf
           terraform apply -auto-approve -var="buildspec_file_name=development-buildspec.yml"
       
@@ -81,7 +82,8 @@ jobs:
         if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
-          terraform delete $BRANCH_NAME
+          terraform workspace select default
+          terraform workspace delete $BRANCH_NAME
           echo "Workspace $BRANCH_NAME deleted"
 
       - name: NOTHING TO DO
