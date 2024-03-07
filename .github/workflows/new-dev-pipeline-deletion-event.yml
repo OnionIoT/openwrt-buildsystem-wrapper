@@ -55,6 +55,7 @@ jobs:
           echo "Current Workspace is $(terraform workspace show)"
 
       - name: Check Terraform Workspace
+        if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
           if [ -z "$(terraform state list)" ]; then
