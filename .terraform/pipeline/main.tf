@@ -22,7 +22,7 @@ locals {
     stage         = local.stage
     REGION        = var.region
     OUTPUT_BUCKET = var.deployment_bucket
-    RELEASE_VERSION = stage_suffix
+    RELEASE_VERSION = local.stage_suffix
   }
 
   codebuild_shared_secrets = {
