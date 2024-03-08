@@ -51,6 +51,7 @@ jobs:
           cd .terraform/pipeline
           terraform workspace select $BRANCH_NAME
           echo "Current Workspace is $(terraform workspace show)"
+          sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
 
       - name: Check Terraform Workspace
         if: env.VALID_BRANCH == 'true'
@@ -68,7 +69,6 @@ jobs:
         if: env.VALID_BRANCH == 'true' && env.TF_IS_EMPTY == 'false'
         run: |
           cd .terraform/pipeline
-          sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
           sed -i '/^resource "aws_s3_bucket" "codepipeline_bucket" {/a force_destroy = true' main.tf
           terraform apply -auto-approve -var="buildspec_file_name=development-buildspec.yml"
       
