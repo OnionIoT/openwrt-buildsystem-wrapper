@@ -8,6 +8,10 @@ data "aws_codestarconnections_connection" "github_connection" {
 locals {
   stage      = terraform.workspace
   stage_vars = var.stage_vars[local.stage]
+
+  stage_parts   = can(split("-", local.stage)) ? split("-", local.stage) : [local.stage]
+  stage_suffix  = length(local.stage_parts) > 1 ? local.stage_parts[1] : local.stage
+
   tags = {
     ProjectName = var.project_name
     Stage       = local.stage
@@ -18,7 +22,7 @@ locals {
     stage         = local.stage
     REGION        = var.region
     OUTPUT_BUCKET = var.deployment_bucket
-    RELEASE_VERSION = split("-", local.stage)[1]
+    RELEASE_VERSION = stage_suffix
   }
 
   codebuild_shared_secrets = {
