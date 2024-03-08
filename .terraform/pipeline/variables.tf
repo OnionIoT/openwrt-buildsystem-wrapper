@@ -18,11 +18,13 @@ variable "repository" {
   description = "Source Github repository containing files and buildspec"
 }
 
+variable "buildspec_file_name" {
+  type        = string
+  description = "The name of the buildspec file for correct development or production builds."
+}
+
+
 variable "stage_vars" {
   description = "Stage Specific Variables"
-  type = map(
-    object({
-      branch = string
-    })
-  )
+  type        = map(object({ branch = string }))
 }
