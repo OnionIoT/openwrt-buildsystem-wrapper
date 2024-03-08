@@ -1,8 +1,8 @@
 # This pipeline create a new pipeline in AWS CodePipeline if the branch follows the desired pattern defined in BRANCH_PATTERN.
-name: "New Branch create AWS CodePipeline" 
+name: "Delete branch and delete AWS CodePipeline" 
 
 on:
-  create:
+  delete:
     branches:
       - 'openwrt-2*'
 
@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: devops
               
       - name: Get branch name
         run: | 
@@ -47,31 +45,46 @@ jobs:
           cd .terraform/pipeline
           terraform init
 
-      - name: Terraform New Workspace
+      - name: Terraform Select Workspace
         if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
-          terraform workspace new $BRANCH_NAME
+          terraform workspace select $BRANCH_NAME
           echo "Current Workspace is $(terraform workspace show)"
 
-      - name: Terraform Validate
+      - name: Check Terraform Workspace
         if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
-          terraform validate
+          if [ -z "$(terraform state list)" ]; then
+            echo "TF_IS_EMPTY=true"
+            echo "Workspace Terraform is empty"
+          else
+            echo "TF_IS_EMPTY=false"
+            echo "Workspace Terraform is not empty"
+          fi
 
-      - name: Terraform Plan
-        if: env.VALID_BRANCH == 'true'
+      - name: Terraform Update Bucket Force Deletion
+        if: env.VALID_BRANCH == 'true' && env.TF_IS_EMPTY == 'false'
         run: |
           cd .terraform/pipeline
           sed -i "/stage_vars = {/a \ \ \"\${{ env.BRANCH_NAME }}\" = {\n \ \ \ branch = \"\${{ env.BRANCH_NAME }}\"\n \ \ }" terraform.tfvars
-          terraform plan
-
-      - name: Terraform Apply
+          sed -i '/^resource "aws_s3_bucket" "codepipeline_bucket" {/a force_destroy = true' main.tf
+          terraform apply -auto-approve -var="buildspec_file_name=development-buildspec.yml"
+      
+      - name: Terraform Destroy && env.TF_IS_EMPTY == 'false'
         if: env.VALID_BRANCH == 'true'
         run: |
           cd .terraform/pipeline
-          terraform apply -auto-approve
+          terraform destroy -auto-approve
+
+      - name: Terraform Delete Workspace
+        if: env.VALID_BRANCH == 'true'
+        run: |
+          cd .terraform/pipeline
+          terraform workspace select default
+          terraform workspace delete $BRANCH_NAME
+          echo "Workspace $BRANCH_NAME deleted"
 
       - name: NOTHING TO DO
         if: env.VALID_BRANCH == 'false'

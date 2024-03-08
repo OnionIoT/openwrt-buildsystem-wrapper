@@ -24,7 +24,7 @@ module "build_action" {
   secrets                    = local.codebuild_shared_secrets
   build_step                 = "build"
   compute_type               = "BUILD_GENERAL1_LARGE"
-  buildspec_file             = "new-dev-buildspec.yml"
+  buildspec_file             = var.buildspec_file_name
   cache_bucket               = aws_s3_bucket.codepipeline_bucket.bucket
   is_privileged_mode         = true
 }
