@@ -31,6 +31,7 @@ phases:
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ]; then echo ">>> VERBOSE DEBUG BUILD"; bash build.sh -V ; exit 1; fi
 
       - cd $ROOT_PATH
+      - RELEASE_VERSION=$(. $ROOT_PATH/profile; echo ${VERSION#v})
       - BUILD_DATE=$(date +%Y%m%d-%H%M%S)
 
       - echo "Copying Packages"
