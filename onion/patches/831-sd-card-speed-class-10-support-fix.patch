@@ -1,0 +1,18 @@
+--- /dev/null
++++ b/target/linux/ramips/patches-5.15/831-disable-detect-fp64-mode.patch
+@@ -0,0 +1,13 @@
++--- a/drivers/mmc/host/mtk-mmc/sd.c
+++++ b/drivers/mmc/host/mtk-mmc/sd.c
++@@ -1165,7 +1165,11 @@ static int msdc_do_request(struct mmc_host *mmc, struct mmc_request *mrq)
++ 	//}
++ #endif /* end of --- */
++ 
++-	if (!data) {
+++    // ignore requests for CMD48.
+++        if (cmd->opcode == SD_READ_EXTR_SINGLE)
+++            goto done;
+++
+++    if (!data) {
++ 		send_type = SND_CMD;
++ 		if (msdc_do_command(host, cmd, 1, CMD_TIMEOUT) != 0)
++ 			goto done;
