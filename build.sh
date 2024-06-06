@@ -229,7 +229,7 @@ copy_model_firmware() {
 	build_target=$(cat $bconfig | grep "_${build_model}_.*=y" | sed -e "s/CONFIG_TARGET_DEVICE_//g" -e "s/_DEVICE_${build_model}.*//g" | head -1)
 	build_board=$(echo $build_target | awk -F_ '{print $2}')
 	build_target=$(echo $build_target | awk -F_ '{print $1}')
-	targets=$(cat $bconfig | grep "_${build_model}_.*=y" | sed -e "s/CONFIG_TARGET_DEVICE_${build_target}_${build_board}_DEVICE_//g" -e 's/=y//g')
+	targets=$(cat $bconfig | grep "CONFIG_TARGET_DEVICE.*_${build_model}_.*=y" | sed -e "s/CONFIG_TARGET_DEVICE_${build_target}_${build_board}_DEVICE_//g" -e 's/=y//g')
 
 	image_path="$OPENWRT_DIR/bin/targets/${build_target}/${build_board}"
 
@@ -293,7 +293,7 @@ done
 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=0
 [ -z "$ALL_KMODS" ] && ALL_KMODS=0
 [ -z "$OPENWRT_DIR" ] && OPENWRT_DIR="$ROOT_DIR/openwrt"
-[ -z "$OPENWRT_TAG" ] && OPENWRT_TAG="v22.03.3"
+[ -z "$OPENWRT_TAG" ] && OPENWRT_TAG="v23.05.3"
 [ -z "$VERBOSE" ] && VERBOSE=0
 [ -z "$SILENT" ] && SILENT=0
 OEM_DIR="$ROOT_DIR/$OEM"
