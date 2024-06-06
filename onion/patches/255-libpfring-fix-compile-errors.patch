@@ -1,0 +1,24 @@
+--- /dev/null
++++ b/package/feeds/packages/libpfring/patches/255-fix-compile-errors.patch
+@@ -0,0 +1,20 @@
++--- a/kernel/pf_ring.c
+++++ b/kernel/pf_ring.c
++@@ -5606,7 +5606,7 @@ static int packet_ring_bind(struct sock *sk, char *dev_name)
++ static int ring_bind(struct socket *sock, struct sockaddr *sa, int addr_len)
++ {
++   struct sock *sk = sock->sk;
++-  char name[sizeof(sa->sa_data)+1];
+++  char name[sizeof(sa->sa_data_min)+1];
++
++   debug_printk(2, "ring_bind() called\n");
++
++@@ -5620,7 +5620,7 @@ static int ring_bind(struct socket *sock, struct sockaddr *sa, int addr_len)
++   if(sa->sa_data == NULL)
++     return(-EINVAL);
++
++-  memcpy(name, sa->sa_data, sizeof(sa->sa_data));
+++  memcpy(name, sa->sa_data, sizeof(sa->sa_data_min));
++
++   /* Add trailing zero if missing */
++   name[sizeof(name)-1] = '\0';
++

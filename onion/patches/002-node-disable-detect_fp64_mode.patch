@@ -18,11 +18,11 @@
  	$(if $(findstring +neon-vfpv4",$(CONFIG_CPU_TYPE)),--with-arm-fpu=neon) \
  	$(if $(findstring +vfpv4",$(CONFIG_CPU_TYPE)),--with-arm-fpu=vfpv3) \
 --- /dev/null
-+++ b/feeds/packages/lang/node/patches/011-disable__detect_fp64_mode.patch
++++ b/feeds/packages/lang/node/patches/011-disable-detect-fp64-mode.patch
 @@ -0,0 +1,20 @@
 +--- a/deps/v8/src/base/cpu.cc
 ++++ b/deps/v8/src/base/cpu.cc
-+@@ -197,6 +197,7 @@ static uint32_t ReadELFHWCaps() {
++@@ -199,6 +199,7 @@ static uint32_t ReadELFHWCaps() {
 + int __detect_fp64_mode(void) {
 +   double result = 0;
 +   // Bit representation of (double)1 is 0x3FF0000000000000.
@@ -30,7 +30,7 @@
 +   __asm__ volatile(
 +       ".set push\n\t"
 +       ".set noreorder\n\t"
-+@@ -211,6 +212,9 @@ int __detect_fp64_mode(void) {
++@@ -213,6 +214,9 @@ int __detect_fp64_mode(void) {
 +       : "t0", "$f0", "$f1", "memory");
 + 
 +   return !(result == 1);
@@ -40,3 +40,20 @@
 + }
 + 
 + 
+--- /dev/null
++++ b/feeds/packages/lang/node/patches/012-disable-clobber-registers-usage.patch
+@@ -0,0 +1,13 @@
++--- a/deps/v8/src/execution/clobber-registers.cc
+++++ b/deps/v8/src/execution/clobber-registers.cc
++@@ -53,7 +53,8 @@ namespace internal {
++ #define CLOBBER_REGISTER(R) __asm__ volatile("movgr2fr.d $" #R ",$zero" :::);
++
++ #elif V8_HOST_ARCH_MIPS && V8_TARGET_ARCH_MIPS
++-#define CLOBBER_USE_REGISTER(R) __asm__ volatile("mtc1 $zero,$" #R :::);
+++// Commented out due to compilation error "opcode not supported on this processor: mips32r2 (mips32r2) `mtc1 $zero,$f0"
+++// #define CLOBBER_USE_REGISTER(R) __asm__ volatile("mtc1 $zero,$" #R :::);
++
++ #elif V8_HOST_ARCH_MIPS64 && V8_TARGET_ARCH_MIPS64
++ #define CLOBBER_USE_REGISTER(R) __asm__ volatile("dmtc1 $zero,$" #R :::);
++
+---
