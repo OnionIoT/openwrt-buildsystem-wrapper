@@ -1,8 +1,8 @@
-VERSION="23.05.2"
-VCODE="b104"
+VERSION="23.05.3"
+VCODE="r238"
 MODELS="onion"
 ALL_KMODS=1
-OPENWRT_TAG=v22.03.5
+OPENWRT_TAG=v23.05.3
 GIT_OPENWRT="https://github.com/openwrt/openwrt"
 OEM=onion
 DEV_CLEAN_SKIP=1

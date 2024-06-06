@@ -32,7 +32,7 @@
 +	    SUBDIRS="$(PKG_BUILD_DIR)"
 +
 +define Build/Compile
-+	$(KERNEL_MAKE) EXTRA_CFLAGS=-Wno-vla M="$(PKG_BUILD_DIR)/p44-ledchain/src"
++	$(KERNEL_MAKE) EXTRA_CFLAGS="-Wno-vla -Wno-error=unused-result" M="$(PKG_BUILD_DIR)/p44-ledchain/src"
 +endef
 +
 +$(eval $(call KernelPackage,$(PKG_NAME)))
