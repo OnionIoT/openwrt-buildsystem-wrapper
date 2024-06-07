@@ -1,0 +1,15 @@
+--- a/target/linux/ramips/dts/mt7628an_onion_omega2.dtsi
++++ b/target/linux/ramips/dts/mt7628an_onion_omega2.dtsi
+@@ -37,6 +37,12 @@
+ 	};
+ };
+ 
++&gpio {
++  /* prevent auto-numbering GPIOs, retain traditional 0-based GPIOs */
++  /* (needs patch in gpio-mt7621.c to re-introduce the gpio-base property) */
++  gpio-base = <0>;
++};
++
+ &state_default {
+ 	gpio {
+ 		groups = "gpio";
