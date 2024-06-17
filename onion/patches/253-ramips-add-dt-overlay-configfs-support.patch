@@ -814,7 +814,7 @@
 + 			info.
 --- /dev/null
 +++ b/target/linux/ramips/patches-5.15/398-065-of-overlay-add-per-overlay-sysfs-attributes.patch
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,231 @@
 +--- a/drivers/of/overlay.c
 ++++ b/drivers/of/overlay.c
 +@@ -25,6 +25,20 @@
@@ -1022,10 +1022,11 @@
 + 
 + 	ret = __of_changeset_apply_notify(&ovcs->cset);
 + 	if (ret)
-+@@ -1025,6 +1103,13 @@ static int of_overlay_apply(struct overlay_changeset *ovcs)
-+ 		if (!ret)
-+ 			ret = ret_tmp;
++@@ -1028,6 +1106,14 @@ static int of_overlay_apply(struct overlay_changeset *ovcs)
++ out:
++ 	pr_debug("%s() err=%d\n", __func__, ret);
 + 
+++	return ret;
 ++err_revert:
 ++	ret_tmp = 0;
 ++	ret_revert = __of_changeset_revert_entries(&ovcs->cset, &ret_tmp);
@@ -1033,10 +1034,10 @@
 ++		pr_debug("overlay changeset revert error %d\n", ret_revert);
 ++		devicetree_state_flags |= DTSF_REVERT_FAIL;
 ++	}
-+ out:
-+ 	pr_debug("%s() err=%d\n", __func__, ret);
++ 	return ret;
++ }
 + 
-+@@ -1264,6 +1349,8 @@ int of_overlay_remove(int *ovcs_id)
++@@ -1264,6 +1350,8 @@ int of_overlay_remove(int *ovcs_id)
 + 	if (ret)
 + 		goto err_unlock;
 + 
