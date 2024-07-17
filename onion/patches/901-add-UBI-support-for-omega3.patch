@@ -1,0 +1,144 @@
+diff --git a/target/linux/ramips/Makefile b/target/linux/ramips/Makefile
+index 589fd7f258..492449d5e3 100644
+--- a/target/linux/ramips/Makefile
++++ b/target/linux/ramips/Makefile
+@@ -8,7 +8,7 @@ ARCH:=mipsel
+ BOARD:=ramips
+ BOARDNAME:=MediaTek Ralink MIPS
+ SUBTARGETS:=mt7620 mt7621 mt76x8 rt288x rt305x rt3883
+-FEATURES:=dt-overlay squashfs gpio
++FEATURES:= dt-overlay squashfs gpio $(if $(CONFIG_TARGET_DEVICE_ramips_mt76x8_DEVICE_onion_omega3),nand ubifs,)
+ 
+ KERNEL_PATCHVER:=5.15
+ 
+diff --git a/target/linux/ramips/image/mt76x8.mk b/target/linux/ramips/image/mt76x8.mk
+index b20e9efa7f..c43d554484 100644
+--- a/target/linux/ramips/image/mt76x8.mk
++++ b/target/linux/ramips/image/mt76x8.mk
+@@ -473,11 +473,16 @@ endef
+ endef
+ TARGET_DEVICES += onion_omega2p
+ 
+ define Device/onion_omega3
+   IMAGE_SIZE := 256m
+   DEVICE_VENDOR := Onion
+   DEVICE_MODEL := Omega3
+   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
+   SUPPORTED_DEVICES += omega3
++  DEVICE_VARIANT := NOR/NAND
++  BLOCKSIZE := 128k
++  PAGESIZE := 2048
++  IMAGE/sysupgrade.bin := append-kernel | pad-to 4096k | append-ubi | check-size | append-metadata
++  UBIFS_OPTS := -m 2048 -e 124KiB -c 4096
+ endef
+ TARGET_DEVICES += onion_omega3
+ 
+diff --git a/target/linux/ramips/mt76x8/config-5.15 b/target/linux/ramips/mt76x8/config-5.15
+index 75e8d6e088..e4db253f73 100644
+--- a/target/linux/ramips/mt76x8/config-5.15
++++ b/target/linux/ramips/mt76x8/config-5.15
+@@ -11,9 +11,6 @@ CONFIG_CEVT_SYSTICK_QUIRK=y
+ CONFIG_CLKEVT_RT3352=y
+ CONFIG_CLKSRC_MMIO=y
+ CONFIG_CLONE_BACKWARDS=y
+-CONFIG_CMDLINE="rootfstype=squashfs,jffs2"
+-CONFIG_CMDLINE_BOOL=y
+-# CONFIG_CMDLINE_OVERRIDE is not set
+ CONFIG_COMMON_CLK=y
+ CONFIG_COMPAT_32BIT_TIME=y
+ CONFIG_CPU_GENERIC_DUMP_TLB=y
+@@ -32,8 +29,12 @@ CONFIG_CPU_R4K_CACHE_TLB=y
+ CONFIG_CPU_SUPPORTS_32BIT_KERNEL=y
+ CONFIG_CPU_SUPPORTS_HIGHMEM=y
+ CONFIG_CPU_SUPPORTS_MSA=y
++CONFIG_CRC16=y
++CONFIG_CRYPTO_DEFLATE=y
++CONFIG_CRYPTO_HASH_INFO=y
+ CONFIG_CRYPTO_LIB_BLAKE2S_GENERIC=y
+ CONFIG_CRYPTO_LIB_POLY1305_RSIZE=2
++CONFIG_CRYPTO_LZO=y
+ CONFIG_CRYPTO_RNG2=y
+ CONFIG_CSRC_R4K=y
+ CONFIG_DEBUG_PINCTRL=y
+@@ -87,8 +88,11 @@ CONFIG_IRQ_FORCED_THREADING=y
+ CONFIG_IRQ_INTC=y
+ CONFIG_IRQ_MIPS_CPU=y
+ CONFIG_IRQ_WORK=y
++# CONFIG_JFFS2_FS is not set
+ CONFIG_LIBFDT=y
+ CONFIG_LOCK_DEBUGGING_SUPPORT=y
++CONFIG_LZO_COMPRESS=y
++CONFIG_LZO_DECOMPRESS=y
+ CONFIG_MDIO_BUS=y
+ CONFIG_MDIO_DEVICE=y
+ CONFIG_MDIO_DEVRES=y
+@@ -99,9 +103,7 @@ CONFIG_MIPS=y
+ CONFIG_MIPS_ASID_BITS=8
+ CONFIG_MIPS_ASID_SHIFT=0
+ CONFIG_MIPS_CLOCK_VSYSCALL=y
+-# CONFIG_MIPS_CMDLINE_BUILTIN_EXTEND is not set
+-# CONFIG_MIPS_CMDLINE_FROM_BOOTLOADER is not set
+-CONFIG_MIPS_CMDLINE_FROM_DTB=y
++CONFIG_MIPS_CMDLINE_FROM_BOOTLOADER=y
+ CONFIG_MIPS_EBPF_JIT=y
+ CONFIG_MIPS_L1_CACHE_SHIFT=5
+ CONFIG_MIPS_LD_CAN_LINK_VDSO=y
+@@ -122,6 +124,10 @@ CONFIG_MTD_SPI_NOR=y
+ CONFIG_MTD_SPI_NOR_USE_VARIABLE_ERASE=y
+ CONFIG_MTD_SPLIT_TPLINK_FW=y
+ CONFIG_MTD_SPLIT_UIMAGE_FW=y
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_BEB_LIMIT=20
++CONFIG_MTD_UBI_BLOCK=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
+ CONFIG_MTD_VIRT_CONCAT=y
+ CONFIG_NEED_DMA_MAP_STATE=y
+ CONFIG_NEED_PER_CPU_KM=y
+@@ -168,6 +173,7 @@ CONFIG_SERIAL_8250_NR_UARTS=3
+ CONFIG_SERIAL_8250_RUNTIME_UARTS=3
+ CONFIG_SERIAL_MCTRL_GPIO=y
+ CONFIG_SERIAL_OF_PLATFORM=y
++CONFIG_SGL_ALLOC=y
+ CONFIG_SOC_MT7620=y
+ # CONFIG_SOC_MT7621 is not set
+ # CONFIG_SOC_RT288X is not set
+@@ -196,6 +202,11 @@ CONFIG_TICK_CPU_ACCOUNTING=y
+ CONFIG_TIMER_OF=y
+ CONFIG_TIMER_PROBE=y
+ CONFIG_TINY_SRCU=y
++CONFIG_UBIFS_FS=y
++CONFIG_UBIFS_FS_ADVANCED_COMPR=y
++# CONFIG_UBIFS_FS_ZSTD is not set
+ CONFIG_USB_SUPPORT=y
+ CONFIG_USE_OF=y
+ CONFIG_WATCHDOG_CORE=y
++CONFIG_ZLIB_DEFLATE=y
++CONFIG_ZLIB_INFLATE=y
+
+diff --git a/target/linux/ramips/dts/mt7628an_onion_omega3.dts b/target/linux/ramips/dts/mt7628an_onion_omega3.dts
+index 7c4976119c..f490581f0c 100644
+--- a/target/linux/ramips/dts/mt7628an_onion_omega3.dts
++++ b/target/linux/ramips/dts/mt7628an_onion_omega3.dts
+@@ -113,17 +113,17 @@
+ 
+ 			partition@0 {
+ 				label = "u-boot";
+-				reg = <0x0 0xA0000>;
++				reg = <0x0 0xC8000>;
+ 				read-only;
+ 			};
+-			partition@A0000 {
++			partition@C8000 {
+ 				label = "u-boot-env";
+-				reg = <0xA0000 0x10000>;
++				reg = <0xC8000 0x10000>;
+ 				read-only;
+ 			};
+-			factory: partition@B0000 {
++			factory: partition@D8000 {
+ 				label = "factory";
+-				reg = <0xB0000 0x10000>;
++				reg = <0xD8000 0x10000>;
+ 				read-only;
+ 			};
+ 		};
