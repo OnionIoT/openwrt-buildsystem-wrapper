@@ -1,0 +1,26 @@
+From d970300442022329594cfa6337f3e400ecece02e Mon Sep 17 00:00:00 2001
+From: Yevhenii Onishchenko <yevhenii.onishchenko@lembergsolutions.com>
+Date: Thu, 25 Jul 2024 16:34:43 +0300
+Subject: [PATCH] Add config for uboot-env package
+
+---
+ package/boot/uboot-envtools/files/ramips | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/package/boot/uboot-envtools/files/ramips b/package/boot/uboot-envtools/files/ramips
+index 1df42c22ef..4334cdb179 100644
+--- a/package/boot/uboot-envtools/files/ramips
++++ b/package/boot/uboot-envtools/files/ramips
+@@ -99,6 +99,9 @@ linksys,ea8100-v2|\
+ mts,wg430223)
+ 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+ 	;;
++onion,omega3)
++	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x10000"
++	;;
+ snr,snr-cpe-me1|\
+ snr,snr-cpe-me2-sfp|\
+ snr,cpe-w4n-mt)
+-- 
+2.25.1
+
