@@ -1,0 +1,50 @@
+From 5543aadb1a9c10f64a19c555fe453fed7ccbf518 Mon Sep 17 00:00:00 2001
+From: Yevhenii Onishchenko <yevhenii.onishchenko@lembergsolutions.com>
+Date: Thu, 25 Jul 2024 19:05:36 +0300
+Subject: [PATCH] Add separate tar image for omega3 sysupgrade
+
+---
+ target/linux/ramips/image/mt76x8.mk                          | 2 ++
+ .../linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh   | 5 +----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/target/linux/ramips/image/mt76x8.mk b/target/linux/ramips/image/mt76x8.mk
+index 639d4e6ac2..3a8f13c61e 100644
+--- a/target/linux/ramips/image/mt76x8.mk
++++ b/target/linux/ramips/image/mt76x8.mk
+@@ -482,7 +482,9 @@ define Device/onion_omega3
+   DEVICE_VARIANT := NOR/NAND
+   BLOCKSIZE := 128k
+   PAGESIZE := 2048
++  IMAGES += sysupgrade.tar
+   IMAGE/sysupgrade.bin := append-kernel | pad-to 4096k | append-ubi | check-size | append-metadata
++  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+   UBIFS_OPTS := -m 2048 -e 124KiB -c 4096
+ endef
+ TARGET_DEVICES += onion_omega3
+diff --git a/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh b/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
+index 0cb4b1756c..53a322555e 100755
+--- a/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
+@@ -2,8 +2,6 @@
+ # Copyright (C) 2010 OpenWrt.org
+ #
+ 
+-include /sbin/sysupgrade
+-
+ PART_NAME=firmware
+ REQUIRE_IMAGE_METADATA=1
+ 
+@@ -31,8 +29,7 @@ platform_do_upgrade() {
+ 		default_do_upgrade "$1"
+ 		;;
+ 	onion,omega3)
+-		[ $SAVE_CONFIG -eq 0 ] && MTD_ARGS="-e $PART_NAME"
+-		default_do_upgrade "$1"
++		nand_do_upgrade "$1"
+ 		;;
+ 	tplink,archer-c20-v5|\
+ 	tplink,archer-c50-v4)
+-- 
+2.25.1
+
