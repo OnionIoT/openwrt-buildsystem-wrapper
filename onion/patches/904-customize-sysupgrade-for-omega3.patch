@@ -1,0 +1,36 @@
+From 614c38b39d00cc13d3d7ae683f59639b4a864497 Mon Sep 17 00:00:00 2001
+From: Yevhenii Onishchenko <yevhenii.onishchenko@lembergsolutions.com>
+Date: Thu, 25 Jul 2024 17:09:46 +0300
+Subject: [PATCH] Customize sysupgrade for omega3
+
+---
+ .../linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh  | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh b/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
+index 20adfafc3d..0cb4b1756c 100755
+--- a/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ramips/mt76x8/base-files/lib/upgrade/platform.sh
+@@ -2,6 +2,8 @@
+ # Copyright (C) 2010 OpenWrt.org
+ #
+ 
++include /sbin/sysupgrade
++
+ PART_NAME=firmware
+ REQUIRE_IMAGE_METADATA=1
+ 
+@@ -28,6 +30,10 @@ platform_do_upgrade() {
+ 		}
+ 		default_do_upgrade "$1"
+ 		;;
++	onion,omega3)
++		MTD_ARGS="-e $PART_NAME"
++		default_do_upgrade "$1"
++		;;
+ 	tplink,archer-c20-v5|\
+ 	tplink,archer-c50-v4)
+ 		MTD_ARGS="-t romfile"
+-- 
+2.25.1
+
