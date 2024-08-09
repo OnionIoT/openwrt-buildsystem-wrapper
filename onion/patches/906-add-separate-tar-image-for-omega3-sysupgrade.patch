@@ -39,7 +39,7 @@ index 0cb4b1756c..53a322555e 100755
  		default_do_upgrade "$1"
  		;;
  	onion,omega3)
--		[ $SAVE_CONFIG -eq 0 ] && MTD_ARGS="-e $PART_NAME"
+-		MTD_ARGS="-e $PART_NAME"
 -		default_do_upgrade "$1"
 +		nand_do_upgrade "$1"
  		;;

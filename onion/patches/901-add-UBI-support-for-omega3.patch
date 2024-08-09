@@ -12,16 +12,10 @@ index 589fd7f258..492449d5e3 100644
  KERNEL_PATCHVER:=5.15
  
 diff --git a/target/linux/ramips/image/mt76x8.mk b/target/linux/ramips/image/mt76x8.mk
-index b20e9efa7f..c43d554484 100644
+index b20e9efa7f..12f5d2e2fc 100644
 --- a/target/linux/ramips/image/mt76x8.mk
 +++ b/target/linux/ramips/image/mt76x8.mk
-@@ -473,11 +473,16 @@ endef
- endef
- TARGET_DEVICES += onion_omega2p
- 
- define Device/onion_omega3
-   IMAGE_SIZE := 256m
-   DEVICE_VENDOR := Onion
+@@ -479,6 +479,11 @@ define Device/onion_omega3
    DEVICE_MODEL := Omega3
    DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
    SUPPORTED_DEVICES += omega3
