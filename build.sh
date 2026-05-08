@@ -366,12 +366,36 @@ done
 [ -z "$SILENT" ] && SILENT=0
 [ -z "$OEM" ] && OEM=onion
 OEM_DIR="$ROOT_DIR/$OEM"
+BUILD_DATA_DIR="${BUILD_DATA_DIR:-$OEM}"
+MODEL_DIR="$ROOT_DIR/$BUILD_DATA_DIR"
 
-# validate OEM dir path
+# validate OEM output dir path
 if [ ! -d "$OEM_DIR" ]; then
 	echo "Vendor data not found"
 	exit 1
 fi
+
+resolve_model_dir() {
+	local model supported_models
+
+	[ ! -d "$MODEL_DIR" ] && return 1
+	[ -f "$MODEL_DIR/supported_models" ] && supported_models="$(cat "$MODEL_DIR/supported_models")"
+
+	for model in $MODELS; do
+		echo "$supported_models" | grep -q -w "$model" && continue
+
+		if [ -f "$ROOT_DIR/$model/supported_models" ] && grep -q -w "$model" "$ROOT_DIR/$model/supported_models"; then
+			BUILD_DATA_DIR="$model"
+			MODEL_DIR="$ROOT_DIR/$BUILD_DATA_DIR"
+			supported_models="$(cat "$MODEL_DIR/supported_models")"
+			continue
+		fi
+
+		return 1
+	done
+
+	return 0
+}
 
 # validate version arguments
 if [ -z "$VERSION" ] || [ -z "$VCODE" ]; then
@@ -379,26 +403,25 @@ if [ -z "$VERSION" ] || [ -z "$VCODE" ]; then
 	usage_help 1
 fi
 
-if [ "$APPLY_PATCH" == "1" ]; then
-	PATCH_DIR="${OEM_DIR}/patches"
-	CONFIG_DIR="${OEM_DIR}/configs"
-	MODELS_FILE="${OEM_DIR}/supported_models"
-	FILES_DIR="${OEM_DIR}/files"
-	PACKAGES_DIR="${OEM_DIR}/packages"
-	FW_DIR="${OEM_DIR}/bin/images"
-	[ -f "$MODELS_FILE" ] && supported_models="$(cat $MODELS_FILE)"
+if [ -n "$MODELS" ]; then
+	if ! resolve_model_dir; then
+		usage_help 1
+	fi
+elif [ -f "$MODEL_DIR/supported_models" ]; then
+	supported_models="$(cat "$MODEL_DIR/supported_models")"
+	MODELS="$supported_models"
+else
+	usage_help 1
 fi
 
-# validate hardware model
-if [ -n "$MODELS" ]; then
-	for model in $MODELS; do
-		echo "$supported_models" | grep -q -w "$model"
-		if [ $? -ne 0 ]; then
-			usage_help 1
-		fi
-	done
-else
-	MODELS="$supported_models"
+if [ "$APPLY_PATCH" == "1" ]; then
+	PATCH_DIR="${MODEL_DIR}/patches"
+	CONFIG_DIR="${MODEL_DIR}/configs"
+	MODELS_FILE="${MODEL_DIR}/supported_models"
+	FILES_DIR="${MODEL_DIR}/files"
+	PACKAGES_DIR="${MODEL_DIR}/packages"
+	FW_DIR="${ROOT_DIR}/bin/images"
+	[ -f "$MODELS_FILE" ] && supported_models="$(cat $MODELS_FILE)"
 fi
 
 if [ "$DEV_PREPARE" != "1" ] && [ -f "$PREBUILT" ]; then

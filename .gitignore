@@ -1,8 +1,7 @@
 openwrt
 .prebuilt
 DEVLOG.md
-onion/bin
+bin/
 linux-stable
 omega4-kernel-packages
-omega4/bin
 */pipeline/.terraform

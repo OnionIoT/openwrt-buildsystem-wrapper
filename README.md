@@ -1,6 +1,6 @@
-# Omega4 OpenWrt Build Wrapper
+# Onion OpenWrt Build Wrapper
 
-This branch builds Omega4 firmware through the wrapper project. Omega4 support is not upstreamed, so the wrapper uses OnionIoT forks for OpenWrt, the Linux kernel, and Omega4 kernel packages.
+This branch builds Onion firmware through the wrapper project. The default profile builds the Omega4 model with `OEM=onion`.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ https://openwrt.org/docs/guide-developer/toolchain/install-buildsystem#debianubu
 
 ## Source Repositories
 
-This branch's checked-in `profile` uses:
+This branch's checked-in `profile` uses OnionIoT forks for OpenWrt, the Linux kernel, and Omega4 kernel packages:
 
 | Component | Repository | Ref |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ The wrapper fallback default is `OEM=onion` when `OEM` is not set by `profile` o
 This branch's checked-in `profile` overrides the fallback to select Omega4:
 
 ```sh
-OEM=omega4
+OEM=onion
 MODELS=omega4
 VERSION=0.0.11
 VCODE=r1
@@ -54,6 +54,7 @@ Useful build commands:
 
 ```sh
 ./build.sh        # prepare repos, build firmware, copy artifacts
+./build.sh -m onion  # build the legacy Onion/Omega2 multi-profile image set
 ./build.sh -d     # prepare the OpenWrt tree and feeds only
 ./build.sh -D     # reuse the prepared tree and build again
 ./build.sh -V     # verbose OpenWrt build
@@ -68,13 +69,13 @@ openwrt/bin/targets/rockchip/cortexa7
 openwrt/bin/packages/arm_cortex-a7_neon-vfpv4
 ```
 
-The wrapper copies flashable Omega4 artifacts to:
+The wrapper copies flashable artifacts to:
 
 ```sh
-omega4/bin/images
+bin/images
 ```
 
-Expected files:
+For the default `OEM=onion`, `MODELS=omega4` profile, expected files include:
 
 ```sh
 openwrt-0.0.11-r1-onion_omega4-evb-boot.img
@@ -83,11 +84,15 @@ openwrt-0.0.11-r1-onion_omega4-evb-rootfs.img
 openwrt-0.0.11-r1-onion_omega4-evb-sysupgrade.tar
 ```
 
-## Omega4 Files
+## OEM Files
 
-Omega4-specific wrapper data lives in:
+OEM-specific and model-specific wrapper data lives in:
 
 ```sh
+onion/supported_models
+onion/configs/onion.config
+onion/patches/
+
 omega4/supported_models
 omega4/configs/omega4.config
 omega4/patches/
@@ -97,10 +102,12 @@ The Omega4 config enables the Rockchip Cortex-A7 target, external kernel tree, A
 
 ## Build Notes
 
-- The wrapper registers `omega4-kernel-packages` as an OpenWrt feed using an absolute `src-link` path.
+- `OEM` names the vendor/output directory. The model config can be resolved from a matching model directory such as `omega4/`.
+- The legacy `onion` model config builds the Omega2 and Omega2+ image set.
+- The wrapper registers `omega4-kernel-packages` as an OpenWrt feed using an absolute `src-link` path when that feed is present.
 - The wrapper sets `CONFIG_EXTERNAL_KERNEL_TREE` to the local `linux-stable` checkout before running `make defconfig`.
 - Omega4 produces split flash images (`boot`, `env`, `rootfs`) plus a `sysupgrade.tar`; it does not use the older Omega2 single `.bin` artifact layout.
-- Generated repos and artifacts are ignored: `openwrt/`, `linux-stable/`, `omega4-kernel-packages/`, `.prebuilt`, and `omega4/bin/`.
+- Generated repos and artifacts are ignored: `openwrt/`, `linux-stable/`, `omega4-kernel-packages/`, `.prebuilt`, and `bin/`.
 
 ## Validation
 
