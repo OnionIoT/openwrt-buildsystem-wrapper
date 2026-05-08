@@ -36,10 +36,25 @@ do_run() {
 		exit_code=$?
 	fi
 
-	if [ "$exit_code" = "1" ]; then
+	if [ "$exit_code" != "0" ]; then
 		echo "ERROR: failed to execute $*"
-		exit 1
+		exit "$exit_code"
 	fi
+
+	return 0
+}
+
+prepare_git_repo() {
+	local repo_dir=$1
+	local git_url=$2
+	local git_ref=$3
+
+	[ -z "$git_url" ] && return 1
+	[ ! -d "$repo_dir/.git" ] && git clone "$git_url" "$repo_dir"
+	[ ! -d "$repo_dir/.git" ] && return 1
+
+	git -C "$repo_dir" fetch --all --tags
+	[ -n "$git_ref" ] && git -C "$repo_dir" checkout "$git_ref"
 
 	return 0
 }
@@ -54,7 +69,7 @@ apply_patches() {
 
 	cd "$OPENWRT_DIR"
 
-	for file in $(ls -1 $PATCH_DIR/*.patch); do
+	for file in $(find "$PATCH_DIR" -name '*.patch' -type f | sort); do
 		echo "Applying patch: $file"
 		if patch -p1 -f --dry-run < $file; then
 			patch -p1 -f < $file || return 1
@@ -71,11 +86,21 @@ update_oem_feed() {
 
 	local action=${1:-add}
 	local feed_name="${OEM}_packages"
+	local kernel_feed_name=${KERNEL_PACKAGES_FEED_NAME:-omega4_kernel_packages}
 	local feeds_file="$OPENWRT_DIR/feeds.conf.default"
+	local packages_path kernel_packages_path
 
 	if [ "$action" == "add" ]; then
-		[ -z "$PACKAGES_DIR" ] || [ ! -d "$PACKAGES_DIR" ] && return
-		grep -q "$feed_name" "$feeds_file" || echo "src-cpy ${OEM}_packages $PACKAGES_DIR" >> "$feeds_file"
+		if [ -n "$PACKAGES_DIR" ] && [ -d "$PACKAGES_DIR" ]; then
+			packages_path=$(cd "$PACKAGES_DIR" && pwd)
+			sed -i -e "/[[:space:]]$feed_name[[:space:]]/d" "$feeds_file"
+			echo "src-cpy ${OEM}_packages $packages_path" >> "$feeds_file"
+		fi
+		if [ -n "$KERNEL_PACKAGES_DIR" ] && [ -d "$KERNEL_PACKAGES_DIR" ]; then
+			kernel_packages_path=$(cd "$KERNEL_PACKAGES_DIR" && pwd)
+			sed -i -e "/[[:space:]]$kernel_feed_name[[:space:]]/d" "$feeds_file"
+			echo "src-link $kernel_feed_name $kernel_packages_path" >> "$feeds_file"
+		fi
 	else
 		[ -x $OPENWRT_DIR/scripts/feeds ] && $OPENWRT_DIR/scripts/feeds clean
 	fi
@@ -121,21 +146,28 @@ openwrt_version_mismatch() {
 	[ ! -d "$OPENWRT_DIR/.git" ] && git clone "$GIT_OPENWRT" "$OPENWRT_DIR"
 	[ ! -d "$OPENWRT_DIR" ] && return 1
 
-	C_TAG=$(git -C "$OPENWRT_DIR" describe --tags)
+	git -C "$OPENWRT_DIR" fetch --all --tags
+	C_TAG=$(git -C "$OPENWRT_DIR" rev-parse HEAD)
+	T_TAG=$(git -C "$OPENWRT_DIR" rev-parse "$OPENWRT_TAG^{commit}" 2>/dev/null)
 
-	[[ "$C_TAG" != "$OPENWRT_TAG" ]]
+	[[ "$C_TAG" != "$T_TAG" ]]
 }
 
 prepare_openwrt() {
-	if openwrt_version_mismatch; then
-		git -C "$OPENWRT_DIR" reset HEAD --hard
-		git -C "$OPENWRT_DIR" fetch --all
-		git -C "$OPENWRT_DIR" checkout "$OPENWRT_TAG"
+	[ -z $GIT_OPENWRT ] && GIT_OPENWRT="https://github.com/openwrt/openwrt"
+	prepare_git_repo "$OPENWRT_DIR" "$GIT_OPENWRT" "$OPENWRT_TAG" || return 1
+
+	if [ -n "$GIT_KERNEL" ]; then
+		prepare_git_repo "$KERNEL_DIR" "$GIT_KERNEL" "$KERNEL_TAG" || return 1
 	fi
 
-	if [ -d /dl ]; then
+	if [ -n "$GIT_KERNEL_PACKAGES" ]; then
+		prepare_git_repo "$KERNEL_PACKAGES_DIR" "$GIT_KERNEL_PACKAGES" "$KERNEL_PACKAGES_TAG" || return 1
+	fi
+
+	if [ -d /dl ] && [ ! -e "$OPENWRT_DIR/dl" ]; then
 		ln -s /dl $OPENWRT_DIR/dl
-	elif [ -L /dl ]; then
+	elif [ -L /dl ] && [ ! -e "$OPENWRT_DIR/dl" ]; then
 		ln -s $(readlink /dl) $OPENWRT_DIR/dl
 	fi
 
@@ -147,7 +179,7 @@ prepare_openwrt() {
 prepare_build() {
 	[ "$DEV_PREPARE_SKIP" == "1" ] && return 0
 
-	prepare_openwrt
+	prepare_openwrt || exit 1
 	revert_patches
 	clean_patch_junk
 
@@ -181,6 +213,9 @@ prepare_model_config() {
 
 	sed -i -e 's/CONFIG_VERSION_NUMBER=.*/CONFIG_VERSION_NUMBER="'"$VERSION"'"/g' "$bconfig"
 	sed -i -e 's/CONFIG_VERSION_CODE=.*/CONFIG_VERSION_CODE="'"$VCODE"'"/g' "$bconfig"
+	if [ -n "$KERNEL_DIR" ]; then
+		sed -i -e 's|CONFIG_EXTERNAL_KERNEL_TREE=.*|CONFIG_EXTERNAL_KERNEL_TREE="'"$KERNEL_DIR"'"|g' "$bconfig"
+	fi
 	[ "$ALL_KMODS" == "1" ] && echo "CONFIG_ALL_KMODS=y" >> "$bconfig"
 	[ "$ALL_PACKAGES" == "1" ] && echo "CONFIG_ALL=y" >> "$bconfig"
 
@@ -217,33 +252,64 @@ build_model_firmware() {
 
 copy_model_firmware() {
 	local bconfig="$OPENWRT_DIR/.config"
-	local target targets
+	local artifact build_board build_target device_config image_file image_path image_prefix target target_prefix
+	local copied=0
 
 	TARGET_BOARD=$(cat $bconfig | awk -F= '/CONFIG_TARGET_BOARD=/{print $2}' | tr -d '"')
+	TARGET_SUBTARGET=$(cat $bconfig | awk -F= '/CONFIG_TARGET_SUBTARGET=/{print $2}' | tr -d '"')
+	TARGET_PROFILE=$(cat $bconfig | awk -F= '/CONFIG_TARGET_PROFILE=/{print $2}' | tr -d '"' | sed -e 's/^DEVICE_//')
 	VERSION_DIST=$(cat $bconfig | awk -F= '/CONFIG_VERSION_DIST=/{print $2}' | tr -d '"' | tr '[A-Z]' '[a-z]')
 	VERSION_NUMBER=$(cat $bconfig | awk -F= '/CONFIG_VERSION_NUMBER=/{print $2}' | tr -d '"')
 	VERSION_CODE=$(cat $bconfig | awk -F= '/CONFIG_VERSION_CODE=/{print $2}' | tr -d '"' | tr '[A-Z]' '[a-z]')
+	[ -z "$VERSION_CODE" ] && VERSION_CODE="$VCODE"
 
 	[ ! -d "$FW_DIR" ] && mkdir -p "$FW_DIR"
 
-	build_target=$(cat $bconfig | grep "_${build_model}_.*=y" | sed -e "s/CONFIG_TARGET_DEVICE_//g" -e "s/_DEVICE_${build_model}.*//g" | head -1)
-	build_board=$(echo $build_target | awk -F_ '{print $2}')
-	build_target=$(echo $build_target | awk -F_ '{print $1}')
-	targets=$(cat $bconfig | grep "CONFIG_TARGET_DEVICE.*_${build_model}_.*=y" | sed -e "s/CONFIG_TARGET_DEVICE_${build_target}_${build_board}_DEVICE_//g" -e 's/=y//g')
+	target_configs=$(grep "^CONFIG_TARGET_DEVICE_.*DEVICE_.*${build_model}.*=y" "$bconfig")
+	if [ -z "$target_configs" ] && [ -n "$TARGET_PROFILE" ]; then
+		target_configs="CONFIG_TARGET_DEVICE_${TARGET_BOARD}_${TARGET_SUBTARGET}_DEVICE_${TARGET_PROFILE}=y"
+	fi
 
-	image_path="$OPENWRT_DIR/bin/targets/${build_target}/${build_board}"
+	for device_config in $target_configs; do
+		target_prefix=$(echo "$device_config" | sed -e "s/^CONFIG_TARGET_DEVICE_//" -e "s/_DEVICE_.*//")
+		build_target=$(echo "$target_prefix" | awk -F_ '{print $1}')
+		build_board=$(echo "$target_prefix" | cut -d_ -f2-)
+		target=$(echo "$device_config" | sed -e "s/^CONFIG_TARGET_DEVICE_${target_prefix}_DEVICE_//" -e "s/=y//")
 
-	for target in $targets; do
-		image_file="${image_path}/${VERSION_DIST}-${VERSION_NUMBER}-${build_target}-${build_board}-${target}-squashfs-sysupgrade.bin"
+		image_path="$OPENWRT_DIR/bin/targets/${build_target}/${build_board}"
 		image_prefix=${VERSION_DIST}-${VERSION_NUMBER}-${VERSION_CODE:+${VERSION_CODE}-}${target}
-
-		if [ ! -f "$image_file" ]; then
-			echo "ERROR: Image not found"
-			exit 1
-		else
+		image_file="${image_path}/${VERSION_DIST}-${VERSION_NUMBER}-${build_target}-${build_board}-${target}-squashfs-sysupgrade.bin"
+		if [ -f "$image_file" ]; then
 			cp "$image_file" ${FW_DIR}/${image_prefix}.bin
+			copied=1
 		fi
+
+		image_prefix=${VERSION_DIST}-${VERSION_NUMBER}-${VERSION_CODE:+${VERSION_CODE}-}${target}
+		if [ -z "$VERSION_DIST" ] || [ -z "$VERSION_NUMBER" ]; then
+			VERSION_DIST="openwrt"
+			VERSION_NUMBER="$VERSION"
+			image_prefix=${VERSION_DIST}-${VERSION_NUMBER}-${VERSION_CODE:+${VERSION_CODE}-}${target}
+		fi
+
+		image_file="${image_path}/${VERSION_DIST}-${build_target}-${build_board}-${target}-squashfs-sysupgrade.tar"
+		if [ -f "$image_file" ]; then
+			cp "$image_file" ${FW_DIR}/${image_prefix}-sysupgrade.tar
+			copied=1
+		fi
+
+		for artifact in boot env rootfs; do
+			image_file="${image_path}/${VERSION_DIST}-${build_target}-${build_board}-${target}-squashfs-${artifact}.img"
+			if [ -f "$image_file" ]; then
+				cp "$image_file" ${FW_DIR}/${image_prefix}-${artifact}.img
+				copied=1
+			fi
+		done
 	done
+
+	if [ "$copied" != "1" ]; then
+		echo "ERROR: Image not found"
+		exit 1
+	fi
 
 	return 0
 }
@@ -293,9 +359,12 @@ done
 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=0
 [ -z "$ALL_KMODS" ] && ALL_KMODS=0
 [ -z "$OPENWRT_DIR" ] && OPENWRT_DIR="$ROOT_DIR/openwrt"
+[ -z "$KERNEL_DIR" ] && KERNEL_DIR="$ROOT_DIR/linux-stable"
+[ -z "$KERNEL_PACKAGES_DIR" ] && KERNEL_PACKAGES_DIR="$ROOT_DIR/omega4-kernel-packages"
 [ -z "$OPENWRT_TAG" ] && OPENWRT_TAG="v23.05.3"
 [ -z "$VERBOSE" ] && VERBOSE=0
 [ -z "$SILENT" ] && SILENT=0
+[ -z "$OEM" ] && OEM=onion
 OEM_DIR="$ROOT_DIR/$OEM"
 
 # validate OEM dir path
@@ -332,9 +401,9 @@ else
 	MODELS="$supported_models"
 fi
 
-if [ -f "$PREBUILT" ]; then
+if [ "$DEV_PREPARE" != "1" ] && [ -f "$PREBUILT" ]; then
 	last_hash=$(cat $PREBUILT)
-	current_hash=$(cat $PATCH_DIR/*.patch | md5sum | awk '{print $1}')
+	current_hash=$(find "$PATCH_DIR" -name '*.patch' -type f -print0 | sort -z | xargs -0r cat | md5sum | awk '{print $1}')
 
 	if [ "$last_hash" != "$current_hash" ] || openwrt_version_mismatch; then
 		DEV_PREPARE_SKIP=0
@@ -353,7 +422,7 @@ for build_model in $MODELS; do
 done
 
 if [ "$DEV_CLEAN_SKIP" == "1" ]; then
-	cat $PATCH_DIR/*.patch | md5sum | awk '{print $1}' > "$PREBUILT"
+	find "$PATCH_DIR" -name '*.patch' -type f -print0 | sort -z | xargs -0r cat | md5sum | awk '{print $1}' > "$PREBUILT"
 fi
 
 exit 0

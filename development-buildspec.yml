@@ -35,12 +35,12 @@ phases:
       - BUILD_DATE=$(date +%Y%m%d-%H%M%S)
 
       - echo "Copying Packages"
-      - cd "$ROOT_PATH/openwrt/bin/packages/mipsel_24kc"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/packages/mipsel_24kc/"
+      - cd "$ROOT_PATH/openwrt/bin/packages/arm_cortex-a7_neon-vfpv4"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/packages/arm_cortex-a7_neon-vfpv4/"
 
       - echo "Copying Binaries"
-      - cd "$ROOT_PATH/openwrt/bin/targets/ramips/mt76x8"
-      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/targets/ramips/mt76x8/"
+      - cd "$ROOT_PATH/openwrt/bin/targets/rockchip/cortexa7"
+      - aws s3 cp --recursive . "s3://$OUTPUT_BUCKET/builds/$RELEASE_VERSION/$BUILD_DATE/targets/rockchip/cortexa7/"
 
 cache:
   paths:
@@ -50,6 +50,6 @@ cache:
 artifacts:
   type: zip
   files:
-    - "packages/mipsel_24kc/**/*"
-    - "targets/ramips/mt76x8/**/*"
+    - "packages/arm_cortex-a7_neon-vfpv4/**/*"
+    - "targets/rockchip/cortexa7/**/*"
   base-directory: "$ROOT_PATH/openwrt/bin"
